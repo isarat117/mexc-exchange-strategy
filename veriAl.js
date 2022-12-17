@@ -71,4 +71,7 @@ const diffStrategy =async (countKline,target=5)=>{
     
 
 }
-diffStrategy(4,7)
+
+
+const target =20;
+diffStrategy(4,target)
