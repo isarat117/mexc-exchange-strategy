@@ -3,13 +3,28 @@ const BASE = "https://www.mexc.com";
 const getMarketSymbols = async () => {
     const response =await  axios.get(`${BASE}/open/api/v2/market/symbols`);
     let symbols = [];
-    response.data.data.forEach(symbol=>{symbols.push(symbol.symbol)})
-   return symbols
+    response.data.data.forEach(symbol=>{
+        symbols.push(symbol.symbol)
+    })
+
+    //removo margin parites
+    let result = symbols.filter(item => {
+        if( !(item.includes('5S_') || item.includes('5L_') ||
+            item.includes('4S_') || item.includes('4L_')||
+            item.includes('3S_') || item.includes('3L_')||
+            item.includes('2S_') || item.includes('2L_'))
+            ){
+            return item;
+        }
+       
+      });
+    
+   return result
 };
 
 
 
-// symbol örneği btc_usdt
+//
 const getSymbolKline = async (symbol,interval,limit) => {
     const response =await  axios.get(`${BASE}/open/api/v2/market/kline?symbol=${symbol}&interval=${interval}&limit=${limit}`);
     response.data.data.symbol =symbol
@@ -19,12 +34,18 @@ const getSymbolKline = async (symbol,interval,limit) => {
 
 
 
-const diffStrategy =async (countKline,target=5)=>{
-    const a =await getMarketSymbols();
 
-    for(var i=0; i<a.length;i++)
+
+// -----------ABOUT VOLATILE -------------
+const diffStrategy =async (countKline,target=5)=>{
+    const start = Date.now();
+    const values = [];
+    const symbol =await getMarketSymbols();
+
+    for(var i=0; i<symbol.length;i++)
     {
-            const arr = await getSymbolKline(a[i],"1d",8)
+            const arr = await getSymbolKline(symbol[i],"1d",8)
+            
            
 
 
@@ -41,7 +62,7 @@ const diffStrategy =async (countKline,target=5)=>{
                     }
                     
                 } catch (error) {
-                    console.log("hatalo")
+                    //console.log("hatalı")
                     
                 }
                 
@@ -50,10 +71,10 @@ const diffStrategy =async (countKline,target=5)=>{
            
             
             if (highCount === countKline) {
-                var values = [];
+               
 
                 values.push({
-                    'Coin Name':a[i],
+                    'Coin Name':symbol[i],
                     'Average': avgDifference/4,
                     'high Count':highCount,
                     'target':target,
@@ -62,16 +83,21 @@ const diffStrategy =async (countKline,target=5)=>{
                     
                 })
                 
-                console.table(values)
+              
             }
                     
 
     }
 
     
-
+    console.table(values);
+    const end = Date.now();
+    const timeDiff = (end - start)/1000;
+    console.log(`Tarama işlemi ${timeDiff} saniye sürdü`);
 }
 
+    diffStrategy(4,20)
 
-const target =20;
-diffStrategy(4,target)
+
+
+
