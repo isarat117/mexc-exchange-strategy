@@ -22,16 +22,36 @@ const getMarketSymbols = async () => {
    return result
 };
 
+const getVolume=async (symbol)=> {
+    const response = await axios.get(`${BASE}/open/api/v2/market/ticker?symbol=${symbol}`)
+    const result = response.data.data[0].amount;
+   // console.log(result)
+    return result
+
+}
+
 
 
 //
 const getSymbolKline = async (symbol,interval,limit) => {
-    const response =await  axios.get(`${BASE}/open/api/v2/market/kline?symbol=${symbol}&interval=${interval}&limit=${limit}`);
-    response.data.data.symbol =symbol
-    return  response.data.data;
+    try {
+        const response =await  axios.get(`${BASE}/open/api/v2/market/kline?symbol=${symbol}&interval=${interval}&limit=${limit}`);
+        return  response.data.data;
+        
+    } catch (error) {
+        
+    }
+  
+
   
 };
-
+//test fonksiyonu
+const yaz= async()=>
+{
+    data =await getVolume("eth_usdt")
+    console.log(data)
+    //console.log(data.length)
+}
 
 
 
@@ -40,19 +60,16 @@ const getSymbolKline = async (symbol,interval,limit) => {
 const diffStrategy =async (countKline,target=5)=>{
     const start = Date.now();
     const values = [];
-    const symbol =await getMarketSymbols();
+    const symbols =await getMarketSymbols();
 
-    for(var i=0; i<symbol.length;i++)
+    // tüm pariteleri gezmesi için for döngüsü
+    for(var i=0; i<100;i++)
     {
-            const arr = await getSymbolKline(symbol[i],"1d",8)
-            
-           
-
-
+            const arr = await getSymbolKline(symbols[i],"1d",8)
             let highCount = 0;
             let avgDifference=0;
            
-
+            // bir parite için istenilen özelliği tespit etmek için for döngüsü
             for (let i = arr.length - countKline; i < arr.length; i++) {
                 try {
                     let highDifference = (arr[i][3] - arr[i][4]) * 100 / arr[i][3];
@@ -63,19 +80,18 @@ const diffStrategy =async (countKline,target=5)=>{
                     
                 } catch (error) {
                     //console.log("hatalı")
-                    
-                }
-                
-                
+                       }
+ 
             }
            
             
             if (highCount === countKline) {
-               
+               const volume=await getVolume(symbols[i])
 
                 values.push({
-                    'Coin Name':symbol[i],
+                    'Coin Name':symbols[i],
                     'Average': avgDifference/4,
+                    'volume(K)':volume/1000,
                     'high Count':highCount,
                     'target':target,
                     'index':i
@@ -93,11 +109,14 @@ const diffStrategy =async (countKline,target=5)=>{
     console.table(values);
     const end = Date.now();
     const timeDiff = (end - start)/1000;
-    console.log(`Tarama işlemi ${timeDiff} saniye sürdü`);
+    console.log(`${symbols.length} adet parite için tarama işlemi ${timeDiff} saniye sürdü`);
 }
 
-    diffStrategy(4,20)
+   diffStrategy(3,15)
+module.exports={
+    getSymbolKline:getSymbolKline,
+    getMarketSymbols:getMarketSymbols
 
-
+}
 
 
