@@ -13,6 +13,8 @@ const getMarketSymbols = async () => {
             item.includes('4S_') || item.includes('4L_')||
             item.includes('3S_') || item.includes('3L_')||
             item.includes('2S_') || item.includes('2L_'))
+            &&
+            item.includes('_USDT')
             ){
             return item;
         }
@@ -21,6 +23,31 @@ const getMarketSymbols = async () => {
     
    return result
 };
+const getSupportApiSymbols = async () => {
+    const response =await  axios.get(`${BASE}/open/api/v2/market/api_default_symbols`);
+    let symbols = [];
+    response.data.data.symbol.forEach(symbol=>{
+        symbols.push(symbol)
+    })
+
+   
+    let result = symbols.filter(item => {
+        if( !(item.includes('5S_') || item.includes('5L_')||
+              item.includes('4S_') || item.includes('4L_')||
+              item.includes('3S_') || item.includes('3L_')||
+              item.includes('2S_') || item.includes('2L_'))
+              &&
+              item.includes('_USDT')
+
+             
+            ){
+            return item;
+        }
+       
+      });
+    
+   return result
+}
 
 const getVolume=async (symbol)=> {
     const response = await axios.get(`${BASE}/open/api/v2/market/ticker?symbol=${symbol}`)
@@ -45,13 +72,7 @@ const getSymbolKline = async (symbol,interval,limit) => {
 
   
 };
-//test fonksiyonu
-const yaz= async()=>
-{
-    data =await getVolume("eth_usdt")
-    console.log(data)
-    //console.log(data.length)
-}
+
 
 
 
@@ -63,27 +84,27 @@ const diffStrategy =async (countKline,target=5)=>{
     const symbols =await getMarketSymbols();
 
     // tüm pariteleri gezmesi için for döngüsü
-    for(var i=0; i<100;i++)
+    for(var i=0; i<symbols.length;i++)
     {
             const arr = await getSymbolKline(symbols[i],"1d",8)
             let highCount = 0;
             let avgDifference=0;
-           
+            try {
             // bir parite için istenilen özelliği tespit etmek için for döngüsü
             for (let i = arr.length - countKline; i < arr.length; i++) {
-                try {
+              
                     let highDifference = (arr[i][3] - arr[i][4]) * 100 / arr[i][3];
                     avgDifference +=highDifference;
                     if (highDifference > target) {
                         highCount += 1;
                     }
                     
-                } catch (error) {
-                    //console.log("hatalı")
-                       }
+               
  
             }
-           
+        } catch (error) {
+            //console.log("hatalı")
+               }
             
             if (highCount === countKline) {
                const volume=await getVolume(symbols[i])
@@ -95,7 +116,6 @@ const diffStrategy =async (countKline,target=5)=>{
                     'high Count':highCount,
                     'target':target,
                     'index':i
-
                     
                 })
                 
@@ -111,12 +131,90 @@ const diffStrategy =async (countKline,target=5)=>{
     const timeDiff = (end - start)/1000;
     console.log(`${symbols.length} adet parite için tarama işlemi ${timeDiff} saniye sürdü`);
 }
+const yeniDeneme =async ()=>{
+    var options = {
+        headers: {'user-agent': 'axios/1.2.1'}
+    }
+  
+    
+        const start = Date.now();
+ 
+        const symbols =await getMarketSymbols();
+        try {
+        const responses = await Promise.allSettled(
+         symbols&&symbols.map(async (symbol) => {
+              
+                const res = await axios.get(
+                    `${BASE}/open/api/v2/market/kline?symbol=${symbol}&interval=1d&limit=100`
+               ); 
+                
+            })
+        );
+       console.log((responses.status == "fulfilled") ? responses : responses)
+    } catch (error) {
+        console.log("a")
+    }
+        
+        const end = Date.now();
+    const timeDiff = (end - start)/1000;
+    console.log(`Tarama işlemi ${timeDiff} saniye sürdü`);
+   
+    
+ 
+  
 
-   diffStrategy(3,15)
+    
+
+}
+
+
+
+
+
+const getSymbolDetph = async (symbol,depth) => {
+    const response =await  axios.get(`${BASE}/open/api/v2/market/depth?symbol=${symbol}&depth=${depth}`);
+    return response.data.data;
+   
+}
+
+
+
+
+
+
+
+
+
+
 module.exports={
     getSymbolKline:getSymbolKline,
     getMarketSymbols:getMarketSymbols
 
 }
 
+
+//test fonksiyonu
+const yaz= async()=>
+{
+    data =await getSymbolDetph("NZERO_USDT",50)
+    const values =[];
+    for(let i=0;i<data.asks.length;i++){
+        
+    values.push({
+        Taker:{
+            'price':data.bids[i].price, 
+            'Volume':data.bids[i].price * data.bids[i].quantity,
+        },
+        Maker:{
+            'price':data.asks[i].price, 
+           'Volume':data.asks[i].price * data.asks[i].quantity,
+            
+        }
+    })
+    
+    }
+    console.table(values) //console.log(data.length)
+}
+
+yaz()
 
