@@ -103,7 +103,6 @@ const diffStrategy = async (countKline, target = 5) => {
         let highCount = 0;
         let avgDifference = 0;
         try {
-            // bir parite için istenilen özelliği tespit etmek için for döngüsü
             for (let i = arr.length - countKline; i < arr.length; i++) {
 
                 let highDifference = (arr[i][3] - arr[i][4]) * 100 / arr[i][3];
@@ -116,7 +115,7 @@ const diffStrategy = async (countKline, target = 5) => {
 
             }
         } catch (error) {
-            console.log("hatalı")
+            console.log(error)
         }
 
         if (highCount === countKline) {
